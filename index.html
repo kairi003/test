@@ -12,18 +12,9 @@
   Test Page
   <canvas id="canvas"></canvas>
   <script>
-    const rgb2hsv = (r,g,b) => {
-      const max = Math.max(r,g,b);
-      const min = Math.min(r,g,b);
-      const d = max-min;
-      const h = d && 30 * ({[r]:(g-b)/d+6,[g]:(b-r)/d+8,[b]:(r-g)/d+10})[max] % 180;
-      const s = (max - min) / max * 255;
-      const v = max;
-      return [h, s, v];
-    }
     const hsv2rgb = (h,s,v) => {
-      const hi = Math.floor(h/30);
-      const f = h/30-hi;
+      const hi = Math.floor(h/60);
+      const f = h/60-hi;
       const m = v * (1 - s/255);
       const n = v * (1 - s/255 * f);
       const k = v * (1 - s/255 * (1-f));
@@ -40,22 +31,19 @@
       canvas.height = h;
       ctx.drawImage(img,0,0);
       const imgData = ctx.getImageData(0,0,w,h);
-      const d = imgData.data;
-      for (let i=0;i<d.length;i+=4) {
-        [d[i],d[i+1],d[i+2]] = rgb2hsv(d[i],d[i+1],d[i+2]);
-      }
-      return d;
-    }).then(hsv=>{
+      return imgData.data;
+    }).then(ori=>{
       const {width:w,height:h} = canvas;
       const imgData = ctx.getImageData(0,0,w,h);
       const d = imgData.data;
       setInterval(()=>{
-        for (let i=0;i<hsv.length;i+=4) {
-          [d[i],d[i+1],d[i+2]] = hsv2rgb(new Date()/10%180,127,hsv[i+2]);
+        for (let i=0;i<d.length;i+=4) {
+          const v = Math.max(...ori.slice(i,i+3));
+          [d[i],d[i+1],d[i+2]] = hsv2rgb(new Date()/10,127,v);
         }
         ctx.putImageData(imgData,0,0);
         fav.href = canvas.toDataURL();
-      },10);
+      },50);
     });
   </script>
 </body>
