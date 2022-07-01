@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>test</title>
+  <link rel="icon" href="./favicon.ico" id="fav">
+</head>
+
+<body>
+  Test Page
+  <canvas id="canvas"></canvas>
+  <script>
+    const rgb2hsv = (r,g,b) => {
+      const max = Math.max(r,g,b);
+      const min = Math.min(r,g,b);
+      const d = max-min;
+      const h = d && 30 * ({[r]:(g-b)/d+6,[g]:(b-r)/d+8,[b]:(r-g)/d+10})[max] % 180;
+      const s = (max - min) / max * 255;
+      const v = max;
+      return [h, s, v];
+    }
+    const hsv2rgb = (h,s,v) => {
+      const hi = Math.floor(h/30);
+      const f = h/30-hi;
+      const m = v * (1 - s/255);
+      const n = v * (1 - s/255 * f);
+      const k = v * (1 - s/255 * (1-f));
+      const a = [v,n,m,m,k,v];
+      return [a[hi%6],a[(hi+4)%6],a[(hi+2)%6]];
+    }
+
+    const fav = document.getElementById('fav');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    fetch(fav.href).then(r=>r.blob()).then(createImageBitmap).then(img=>{
+      const {width:w,height:h} = img;
+      canvas.width = w;
+      canvas.height = h;
+      ctx.drawImage(img,0,0);
+      const imgData = ctx.getImageData(0,0,w,h);
+      const d = imgData.data;
+      for (let i=0;i<d.length;i+=4) {
+        [d[i],d[i+1],d[i+2]] = rgb2hsv(d[i],d[i+1],d[i+2]);
+      }
+      return d;
+    }).then(hsv=>{
+      const {width:w,height:h} = canvas;
+      const imgData = ctx.getImageData(0,0,w,h);
+      const d = imgData.data;
+      setInterval(()=>{
+        for (let i=0;i<hsv.length;i+=4) {
+          [d[i],d[i+1],d[i+2]] = hsv2rgb(new Date()/10%180,127,hsv[i+2]);
+        }
+        ctx.putImageData(imgData,0,0);
+        fav.href = canvas.toDataURL();
+      },10);
+    });
+  </script>
+</body>
+
+</html>
